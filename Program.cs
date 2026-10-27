@@ -4,19 +4,14 @@ using System.Linq;
 
 namespace ProductManagementSystem
 {
-    // ==========================================
-    // KLASS 1: Produktmodell (Datastruktur)
-    // ==========================================
     public class Product
     {
-        public string Category { get; set; }
-        public string Name { get; set; }
+        public required string Category { get; set; }
+        //public string Category { get; set; } = string.Empty;
+        public required string Name { get; set; }
         public decimal Price { get; set; }
     }
 
-    // ==========================================
-    // KLASS 2: Hanterare för produkter och LINQ
-    // ==========================================
     public class ProductManager
     {
         private List<Product> products = new List<Product>();
@@ -31,19 +26,16 @@ namespace ProductManagementSystem
             return products;
         }
 
-        // LINQ: OrderBy() - Sorterar produkter efter pris (lägsta till högsta)
         public List<Product> GetSortedProducts()
         {
             return products.OrderBy(p => p.Price).ToList();
         }
 
-        // LINQ: Sum() - Beräknar det totala priset
         public decimal CalculateTotal()
         {
             return products.Sum(p => p.Price);
         }
 
-        // LINQ: Where() - Söker efter produkter baserat på text
         public List<Product> SearchProducts(string query)
         {
             string lowerQuery = query.ToLower();
@@ -51,16 +43,12 @@ namespace ProductManagementSystem
             p.Category.ToLower().Contains(lowerQuery)).ToList();
         }
 
-        // LINQ: FirstOrDefault() - Kontrollerar om en produkt med samma namn redan finns
-        public Product FindExistingProduct(string name)
+        public Product? FindExistingProduct(string name)
         {
             return products.FirstOrDefault(p => p.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
         }
     }
 
-    // ==========================================
-    // KLASS 3: Startpunkt och Console UI
-    // ==========================================
     class Program
     {
         private static ProductManager manager = new ProductManager();
@@ -84,7 +72,7 @@ namespace ProductManagementSystem
                 Console.WriteLine("4. Exit");
                 Console.Write("\nChoose an option: ");
 
-                string choice = Console.ReadLine();
+                string choice = Console.ReadLine() ?? "";
 
                 switch (choice)
                 {
@@ -107,7 +95,6 @@ namespace ProductManagementSystem
             }
         }
 
-        // Inmatningsloop för produkter (dynamisk, avslutas med 'q')
         private static void RunInputLoop()
         {
             Console.Clear();
@@ -116,10 +103,9 @@ namespace ProductManagementSystem
             while (true)
             {
                 Console.ForegroundColor = ConsoleColor.DarkYellow;
-                Console.WriteLine($`"--- Product #{manager.GetProducts().Count + 1} ---");
+                Console.WriteLine($"--- Product #{manager.GetProducts().Count + 1} ---");
                 Console.ResetColor();
 
-                // 1. Inmatning av kategori
                 Console.Write("Enter Category: ");
                 string category = Console.ReadLine()?.Trim();
                 if (category?.ToLower() == "q") break;
@@ -133,7 +119,6 @@ namespace ProductManagementSystem
                 }
                 if (category?.ToLower() == "q") break;
 
-                // 2. Inmatning av namn (Felhantering: Tomt produktnamn)
                 Console.Write("Enter Product Name: ");
                 string name = Console.ReadLine()?.Trim();
 
@@ -144,21 +129,18 @@ namespace ProductManagementSystem
                     name = Console.ReadLine()?.Trim();
                 }
 
-                // Valfritt: använder FirstOrDefault() för att varna om dubbletter
                 var duplicate = manager.FindExistingProduct(name);
                 if (duplicate != null)
                 {
                     Console.ForegroundColor = ConsoleColor.Yellow;
-                    Console.WriteLine(`$"[Note: A product with this name already exists in category '{duplicate.Category}']");
+                    Console.WriteLine($"[Note: A product with this name already exists in category '{duplicate.Category}']");
                     Console.ResetColor();
                 }
 
-                // 3. Inmatning av pris (Felhantering: Ogiltigt pris och negativa värden)
                 Console.Write("Enter Price: ");
                 string priceInput = Console.ReadLine()?.Trim();
                 decimal price;
 
-                // Demonstration av try-catch för att uppfylla kraven på felhantering
                 while (true)
                 {
                     try
@@ -171,7 +153,7 @@ namespace ProductManagementSystem
                         {
                             throw new ArgumentOutOfRangeException("Price cannot be negative values!");
                         }
-                        break; // Om allt är korrekt, avsluta valideringsloopen för priset
+                        break;
                     }
                     catch (Exception ex)
                     {
@@ -181,7 +163,6 @@ namespace ProductManagementSystem
                     }
                 }
 
-                // Lägger till produkten i hanteraren
                 manager.AddProduct(new Product { Category = category, Name = name, Price = price });
 
                 Console.ForegroundColor = ConsoleColor.Green;
@@ -190,7 +171,6 @@ namespace ProductManagementSystem
             }
         }
 
-        // Visar tabell med sortering via OrderBy() och totalsumma via Sum()
         private static void ShowProductTable()
         {
             Console.Clear();
@@ -207,13 +187,13 @@ namespace ProductManagementSystem
             {
                 foreach (var product in sortedList)
                 {
-                    Console.WriteLine($`"{product.Category,-12} | {product.Name,-10} | {product.Price} kr");
+                    Console.WriteLine($"{product.Category,-12} | {product.Name,-10} | {product.Price} kr");
                 }
 
                 decimal total = manager.CalculateTotal();
                 Console.WriteLine(new string('-', 35));
                 Console.ForegroundColor = ConsoleColor.Green;
-                Console.WriteLine(`$"{"Total Price:",-25} | {total} kr");
+                Console.WriteLine($"{"Total Price:",-25} | {total} kr");
                 Console.ResetColor();
             }
 
@@ -221,7 +201,6 @@ namespace ProductManagementSystem
             Console.ReadKey();
         }
 
-        // Sökfunktion med LINQ Where()
         private static void RunSearch()
         {
             Console.Clear();
@@ -240,7 +219,7 @@ namespace ProductManagementSystem
             {
                 foreach (var product in results)
                 {
-                    Console.WriteLine($`"{product.Category,-12} | {product.Name,-10} | {product.Price} kr");
+                    Console.WriteLine($"{product.Category,-12} | {product.Name,-10} | {product.Price} kr");
                 }
             }
 
@@ -248,11 +227,10 @@ namespace ProductManagementSystem
             Console.ReadKey();
         }
 
-        // Hjälpmetod för att visa felmeddelanden i röd färg
         private static void ShowError(string message)
         {
             Console.ForegroundColor = ConsoleColor.Red;
-            Console.WriteLine(`$"Error: {message}");
+            Console.WriteLine($"Error: {message}");
             Console.ResetColor();
         }
     }
