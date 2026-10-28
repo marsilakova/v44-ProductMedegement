@@ -4,17 +4,18 @@ using System.Linq;
 
 namespace ProductManagementSystem
 {
+    // KLASS 1: Produktmodell
     public class Product
     {
         public required string Category { get; set; }
-        //public string Category { get; set; } = string.Empty;
         public required string Name { get; set; }
         public decimal Price { get; set; }
     }
 
+    // KLASS 2: Hanterare för produkter och LINQ
     public class ProductManager
     {
-        private List<Product> products = new List<Product>();
+        private readonly List<Product> products = new List<Product>();
 
         public void AddProduct(Product product)
         {
@@ -38,9 +39,9 @@ namespace ProductManagementSystem
 
         public List<Product> SearchProducts(string query)
         {
-            string lowerQuery = query.ToLower();
-            return products.Where(p => p.Name.ToLower().Contains(lowerQuery) ||
-            p.Category.ToLower().Contains(lowerQuery)).ToList();
+            string lowerQuery = query ?? "";
+            return products.Where(p => p.Name.ToLower().Contains(lowerQuery.ToLower()) ||
+            p.Category.ToLower().Contains(lowerQuery.ToLower())).ToList();
         }
 
         public Product? FindExistingProduct(string name)
@@ -49,9 +50,10 @@ namespace ProductManagementSystem
         }
     }
 
+    // KLASS 3: Startpunkt och Console UI
     class Program
     {
-        private static ProductManager manager = new ProductManager();
+        private static readonly ProductManager manager = new ProductManager();
 
         static void Main(string[] args)
         {
@@ -95,6 +97,7 @@ namespace ProductManagementSystem
             }
         }
 
+        // Inmatningsloop för produkter (dynamisk, avslutas med 'q')
         private static void RunInputLoop()
         {
             Console.Clear();
@@ -103,66 +106,55 @@ namespace ProductManagementSystem
             while (true)
             {
                 Console.ForegroundColor = ConsoleColor.DarkYellow;
-                Console.WriteLine($"--- Product #{manager.GetProducts().Count + 1} ---");
+                Console.WriteLine("--- Product #" + (manager.GetProducts().Count + 1) + " ---");
                 Console.ResetColor();
 
+                // 1. Inmatning av kategori
                 Console.Write("Enter Category: ");
-                string category = Console.ReadLine()?.Trim();
-                if (category?.ToLower() == "q") break;
+                string category = Console.ReadLine()?.Trim() ?? "";
+                if (category.ToLower() == "q") break;
 
                 while (string.IsNullOrWhiteSpace(category))
                 {
                     ShowError("Category cannot be empty!");
                     Console.Write("Enter Category: ");
-                    category = Console.ReadLine()?.Trim();
-                    if (category?.ToLower() == "q") break;
+                    category = Console.ReadLine()?.Trim() ?? "";
+                    if (category.ToLower() == "q") break;
                 }
-                if (category?.ToLower() == "q") break;
+                if (category.ToLower() == "q") break;
 
+                // 2. Inmatning av namn
                 Console.Write("Enter Product Name: ");
-                string name = Console.ReadLine()?.Trim();
+                string name = Console.ReadLine()?.Trim() ?? "";
 
                 while (string.IsNullOrWhiteSpace(name))
                 {
                     ShowError("Product name cannot be empty!");
                     Console.Write("Enter Product Name: ");
-                    name = Console.ReadLine()?.Trim();
+                    name = Console.ReadLine()?.Trim() ?? "";
                 }
 
                 var duplicate = manager.FindExistingProduct(name);
                 if (duplicate != null)
                 {
                     Console.ForegroundColor = ConsoleColor.Yellow;
-                    Console.WriteLine($"[Note: A product with this name already exists in category '{duplicate.Category}']");
+                    Console.WriteLine("[Note: A product with this name already exists in category " + duplicate.Category + "]");
                     Console.ResetColor();
                 }
 
+                // 3. Inmatning av pris
                 Console.Write("Enter Price: ");
-                string priceInput = Console.ReadLine()?.Trim();
+                string priceInput = Console.ReadLine()?.Trim() ?? "";
                 decimal price;
 
-                while (true)
+                while (!decimal.TryParse(priceInput, out price) || price < 0)
                 {
-                    try
-                    {
-                        if (!decimal.TryParse(priceInput, out price))
-                        {
-                            throw new FormatException("Invalid format! Price must be a number.");
-                        }
-                        if (price < 0)
-                        {
-                            throw new ArgumentOutOfRangeException("Price cannot be negative values!");
-                        }
-                        break;
-                    }
-                    catch (Exception ex)
-                    {
-                        ShowError(ex.Message);
-                        Console.Write("Enter Price: ");
-                        priceInput = Console.ReadLine()?.Trim();
-                    }
+                    ShowError("Invalid format or negative value! Price must be a positive number.");
+                    Console.Write("Enter Price: ");
+                    priceInput = Console.ReadLine()?.Trim() ?? "";
                 }
 
+                // Sparar produkten
                 manager.AddProduct(new Product { Category = category, Name = name, Price = price });
 
                 Console.ForegroundColor = ConsoleColor.Green;
@@ -171,6 +163,7 @@ namespace ProductManagementSystem
             }
         }
 
+        // Visar tabell med sortering via OrderBy() och totalsumma via Sum()
         private static void ShowProductTable()
         {
             Console.Clear();
@@ -187,13 +180,13 @@ namespace ProductManagementSystem
             {
                 foreach (var product in sortedList)
                 {
-                    Console.WriteLine($"{product.Category,-12} | {product.Name,-10} | {product.Price} kr");
+                    Console.WriteLine(string.Format("{0,-12} | {1,-10} | {2} kr", product.Category, product.Name, product.Price));
                 }
 
                 decimal total = manager.CalculateTotal();
                 Console.WriteLine(new string('-', 35));
                 Console.ForegroundColor = ConsoleColor.Green;
-                Console.WriteLine($"{"Total Price:",-25} | {total} kr");
+                Console.WriteLine(string.Format("{0,-25} | {1} kr", "Total Price:", total));
                 Console.ResetColor();
             }
 
@@ -201,12 +194,13 @@ namespace ProductManagementSystem
             Console.ReadKey();
         }
 
+        // Sökfunktion med LINQ Where()
         private static void RunSearch()
         {
             Console.Clear();
             Console.WriteLine("----- SEARCH PRODUCTS -----");
             Console.Write("Enter search term (name or category): ");
-            string query = Console.ReadLine()?.Trim();
+            string query = Console.ReadLine()?.Trim() ?? "";
 
             var results = manager.SearchProducts(query);
 
@@ -219,7 +213,7 @@ namespace ProductManagementSystem
             {
                 foreach (var product in results)
                 {
-                    Console.WriteLine($"{product.Category,-12} | {product.Name,-10} | {product.Price} kr");
+                    Console.WriteLine(string.Format("{0,-12} | {1,-10} | {2} kr", product.Category, product.Name, product.Price));
                 }
             }
 
@@ -227,10 +221,11 @@ namespace ProductManagementSystem
             Console.ReadKey();
         }
 
+        // Hjälpmetod för att visa felmeddelanden i röd färg
         private static void ShowError(string message)
         {
             Console.ForegroundColor = ConsoleColor.Red;
-            Console.WriteLine($"Error: {message}");
+            Console.WriteLine("Error: " + message);
             Console.ResetColor();
         }
     }
